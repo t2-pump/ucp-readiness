@@ -1,0 +1,24 @@
+[server]
+# Standard for Cloud Run containers
+address = "0.0.0.0"
+port = 8080
+# Forces Streamlit to run in a non-interactive mode
+headless = true
+enableCORS = false
+enableXsrfProtection = false
+enableStaticServing = true
+enableWebsocketCompression = false 
+
+[browser]
+gatherUsageStats = false
+# Explicitly tell the mobile browser to use the secure port for JS chunks
+serverAddress = "apps-ucp-auditor.t2-digital.com"
+serverPort = 443
+baseUrlPath = ""
+
+[theme]
+primaryColor = "#FF4B4B"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#262730"
+textColor = "#FAFAFA"
+font = "sans serif"

@@ -1,0 +1,10 @@
+streamlit
+requests
+extruct
+beautifulsoup4
+w3lib
+playwright
+nest_asyncio
+playwright-stealth  
+tenacity
+
