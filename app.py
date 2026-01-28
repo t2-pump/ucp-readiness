@@ -5,6 +5,8 @@ import subprocess
 import sys
 import nest_asyncio
 from pathlib import Path
+import io
+
 
 
 # 0. Set Page Config (MUST BE THE VERY FIRST STREAMLIT COMMAND)
@@ -35,7 +37,7 @@ from logic import perform_ucp_audit, calculate_geo_score
 # 3. Fix for Streamlit/Playwright event loop conflict
 nest_asyncio.apply()
 
-# 4. Helper: Convert images to base64 for embedding
+# 4. Helpers: Image encoding and CSV generation
 def img_to_bytes(img_path):
     try:
         img_bytes = Path(img_path).read_bytes()
@@ -43,6 +45,23 @@ def img_to_bytes(img_path):
         return encoded
     except FileNotFoundError:
         return None
+
+def get_csv_download_link(csv_data, filename="audit_results.csv"):
+    """
+    Generates a link allowing the data to be downloaded directly from the browser.
+    This bypasses common "Failed - No file" errors on managed corporate browsers.
+    """
+    try:
+        # If csv_data is a string, encode it. If it's a DataFrame, use .to_csv()
+        if hasattr(csv_data, 'to_csv'):
+            csv_str = csv_data.to_csv(index=False)
+        else:
+            csv_str = csv_data
+            
+        b64 = base64.b64encode(csv_str.encode()).decode() 
+        return f'<a href="data:file/csv;base64,{b64}" download="{filename}" style="color: #00acee; font-weight: bold;">Click here to download your Audit CSV</a>'
+    except Exception as e:
+        return f"Error generating download link: {e}"
 
 # 5. Load Logo
 logo_base64 = img_to_bytes("t2_logo.png")
@@ -168,6 +187,13 @@ if submitted:
                         geo_results = calculate_geo_score(audit_data.get('metadata', {}))
 
                         st.success("Audit Complete!")
+
+                        # --- ROBUST DOWNLOAD FIX ---
+                        # Create the link using the helper function we added to Section 4
+                        # We pass audit_data (or whichever variable contains the exportable table)
+                        download_link = get_csv_download_link(audit_data)
+                        st.markdown(download_link, unsafe_allow_html=True)
+                        st.info("💡 Use the link above if the standard download button fails.")
 
                         # --- SECTION 1: GEO SUMMARY ---
                         st.header("1. GEO Readiness Summary")
