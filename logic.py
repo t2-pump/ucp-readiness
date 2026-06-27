@@ -3,11 +3,20 @@ import json
 def find_product_schema(data):
     """Locates the Product schema from extracted JSON data."""
     def search_in_items(items):
+        if isinstance(items, dict):
+            items = [items]
         if not isinstance(items, list): return None
         for item in items:
+            if not isinstance(item, dict): continue
+            
+            # Check for @graph wrapping
+            if '@graph' in item and isinstance(item['@graph'], list):
+                found = search_in_items(item['@graph'])
+                if found: return found
+                
             # Handle both string and list types for @type
             obj_type = item.get('@type', '')
-            if obj_type == 'Product' or (isinstance(obj_type, list) and 'Product' in obj_type):
+            if obj_type == 'Product' or obj_type == 'IndividualProduct' or (isinstance(obj_type, list) and ('Product' in obj_type or 'IndividualProduct' in obj_type)):
                 return item
         return None
 
@@ -40,11 +49,22 @@ def perform_ucp_audit(blob):
             "ucp_comp": {"name": "UCP Compatibility", "status": "Red", "points": 0, "max_points": 5, "msg": "Missing AI flags"},
             "ucp_use": {"name": "UCP Use Case", "status": "Red", "points": 0, "max_points": 5, "msg": "Missing intent"}
         },
+        "warnings": [],
         "metadata": data 
     }
 
     if not product_data:
         return audit_data
+
+    # Check for Schema Warnings
+    p_type = product_data.get('@type', '')
+    if p_type == 'IndividualProduct' or (isinstance(p_type, list) and 'IndividualProduct' in p_type):
+        audit_data["warnings"].append(
+            "⚠️ **Schema Warning:**\n\n"
+            "**Detected type:** `IndividualProduct`\n\n"
+            "**Recommended type:** `Product`\n\n"
+            "**Risk:** The structured data implementation appears non-standard and may limit eligibility for product rich results and AI-driven product discovery."
+        )
 
     # --- 1. GTIN Scoring ---
     if any(product_data.get(k) for k in ["gtin", "gtin13", "gtin12", "gtin8", "isbn"]):

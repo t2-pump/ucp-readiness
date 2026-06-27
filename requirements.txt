@@ -1,11 +1,13 @@
-streamlit
+streamlit>=1.30,<2.0
 pandas
 requests
 extruct
 beautifulsoup4
 w3lib
+lxml
 playwright
+playwright-stealth
 nest_asyncio
-playwright-stealth  
 tenacity
-
+google-cloud-storage
+google-auth
