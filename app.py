@@ -14,7 +14,8 @@ import os
 from urllib.parse import urlparse
 import google.auth
 from google.auth.transport.requests import Request
-from ga4 import send_ga4_eventimport io
+from ga4 import send_ga4_event
+import io
 
 
 
