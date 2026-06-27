@@ -382,15 +382,14 @@ This is a limitation of running from a cloud server — Cloudflare blocks all ma
             # 1. RUN AUDITS
             audit_data = perform_ucp_audit(blob)
             geo_results = calculate_geo_score(audit_data.get('metadata', {}))
+            st.success("Audit Complete!")
 
-                        st.success("Audit Complete!")
-
-                        # --- ROBUST DOWNLOAD FIX ---
-                        # Create the link using the helper function we added to Section 4
-                        # We pass audit_data (or whichever variable contains the exportable table)
-                        download_link = get_csv_download_link(audit_data)
-                        st.markdown(download_link, unsafe_allow_html=True)
-                        st.info("💡 Use the link above if the standard download button fails.")
+            # --- ROBUST DOWNLOAD FIX ---
+            # Create the link using the helper function we added to Section 4
+            # We pass audit_data (or whichever variable contains the exportable table)
+            download_link = get_csv_download_link(audit_data)
+            st.markdown(download_link, unsafe_allow_html=True)
+            st.info("💡 Use the link above if the standard download button fails.")
 
             # --- SECTION 1: GEO SUMMARY ---
             st.header("1. GEO Readiness Summary")
