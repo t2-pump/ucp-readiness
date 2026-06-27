@@ -113,6 +113,59 @@ def get_csv_download_link(csv_data, filename="audit_results.csv"):
     except Exception as e:
         return f"Error generating download link: {e}"
 
+def to_bytes(x):
+    if isinstance(x, (bytes, bytearray)):
+        return bytes(x)
+    if isinstance(x, str):
+        return x.encode("utf-8")
+    raise TypeError(f"Expected str/bytes, got {type(x)}")
+
+GCS_BUCKET = os.getenv("GCS_EXPORT_BUCKET", "t2-ucp-auditor-exports")  # set in env
+
+def upload_csv_and_get_signed_url(csv_data, filename, minutes_valid=15):
+    """
+    Upload CSV to GCS and return a V4 signed URL that forces download with a friendly filename.
+    csv_data can be str or bytes.
+    """
+    if not isinstance(csv_data, (str, bytes, bytearray)):
+        raise TypeError(f"csv_data must be str or bytes, got {type(csv_data)}")
+
+    if not filename.lower().endswith(".csv"):
+        filename += ".csv"
+
+    payload = to_bytes(csv_data)
+
+    client = storage.Client()
+    bucket = client.bucket(GCS_BUCKET)
+    object_name = f"exports/{uuid.uuid4().hex}/{filename}"
+    blob = bucket.blob(object_name)
+
+    blob.upload_from_string(
+        payload,
+        content_type="text/csv; charset=utf-8",
+    )
+
+    credentials, _ = google.auth.default(
+        scopes=["https://www.googleapis.com/auth/cloud-platform"]
+    )
+    credentials.refresh(Request())
+
+    service_account_email = os.getenv("SIGNED_URL_SERVICE_ACCOUNT_EMAIL")
+    if not service_account_email:
+        raise RuntimeError("SIGNED_URL_SERVICE_ACCOUNT_EMAIL env var is not set")
+
+    signed_url = blob.generate_signed_url(
+        version="v4",
+        expiration=timedelta(minutes=minutes_valid),
+        method="GET",
+        response_disposition=f'attachment; filename="{filename}"',
+        response_type="text/csv",
+        service_account_email=service_account_email,
+        access_token=credentials.token,
+    )
+
+    return signed_url
+
 # 5. Load Logo
 logo_base64 = img_to_bytes("t2_logo.png")
 
